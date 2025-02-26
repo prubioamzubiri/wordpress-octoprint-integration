@@ -3,8 +3,8 @@
  * Plugin Name: WordPress OctoPrint Integration
  * Plugin URI: https://example.com/wordpress-octoprint
  * Description: Integra OctoPrint con WordPress para monitorear y controlar tu impresora 3D
- * Version: 1.0.0
- * Author: Tu Nombre
+ * Version: 0.2
+ * Author: Pablo Rubio, Miren Esnaola
  * License: GPL-2.0+
  */
 
