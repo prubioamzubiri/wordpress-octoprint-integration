@@ -1,5 +1,5 @@
 /**
- * WordPress OctoPrint Integration - Frontend Scripts
+ * WordPress OctoPrint Integration - Scripts principales
  */
 jQuery(document).ready(function($) {
     // Variables
@@ -7,7 +7,7 @@ jQuery(document).ready(function($) {
     const updateInterval = 5000; // Actualizar cada 5 segundos
     
     // Inicializar si existe el contenedor
-    if ($('.wpoi-container').length > 0) {
+    if ($('.wpoi-container').length > 0 && $('#wpoi-printer-status').length > 0) {
         // Iniciar actualizaciones periódicas
         initUpdates();
         
@@ -65,7 +65,7 @@ jQuery(document).ready(function($) {
                     $('#wpoi-printer-status').html(statusText);
                     
                     // Actualizar temperaturas si están disponibles
-                    if (response.data.temperature) {
+                    if (response.data.temperature && $('#wpoi-temperature-data').length > 0) {
                         let tempHtml = '<table class="wpoi-temp-table">';
                         tempHtml += '<tr><th>Sensor</th><th>Actual</th><th>Objetivo</th></tr>';
                         
@@ -106,6 +106,8 @@ jQuery(document).ready(function($) {
      * Actualizar estado del trabajo actual
      */
     function updateJobStatus() {
+        if ($('#wpoi-progress-inner').length === 0) return;
+        
         $.ajax({
             url: wpoi.rest_url + 'job',
             method: 'GET',
@@ -122,17 +124,21 @@ jQuery(document).ready(function($) {
                         let jobHtml = `<p><strong>Archivo:</strong> ${job.file.name}</p>`;
                         
                         // Actualizar barra de progreso
-                        if (progress.completion) {
+                        if (progress.completion !== null) {
                             const completionPercent = progress.completion.toFixed(1);
                             $('#wpoi-progress-inner').css('width', completionPercent + '%').text(completionPercent + '%');
                             
                             // Tiempo estimado
-                            const printTimeLeft = formatTime(progress.printTimeLeft);
-                            jobHtml += `<p><strong>Tiempo restante:</strong> ${printTimeLeft}</p>`;
+                            if (progress.printTimeLeft !== null) {
+                                const printTimeLeft = formatTime(progress.printTimeLeft);
+                                jobHtml += `<p><strong>Tiempo restante:</strong> ${printTimeLeft}</p>`;
+                            }
                             
                             // Tiempo impreso
-                            const printTime = formatTime(progress.printTime);
-                            jobHtml += `<p><strong>Tiempo impreso:</strong> ${printTime}</p>`;
+                            if (progress.printTime !== null) {
+                                const printTime = formatTime(progress.printTime);
+                                jobHtml += `<p><strong>Tiempo impreso:</strong> ${printTime}</p>`;
+                            }
                         } else {
                             $('#wpoi-progress-inner').css('width', '0%').text('0%');
                         }
@@ -146,6 +152,10 @@ jQuery(document).ready(function($) {
                     $('#wpoi-progress-inner').css('width', '0%').text('0%');
                     $('#wpoi-job-info').html('<p>Sin trabajo activo</p>');
                 }
+            },
+            error: function() {
+                $('#wpoi-progress-inner').css('width', '0%').text('0%');
+                $('#wpoi-job-info').html('<p>Error al obtener información del trabajo</p>');
             }
         });
     }
@@ -154,6 +164,8 @@ jQuery(document).ready(function($) {
      * Actualizar imagen de webcam
      */
     function updateWebcam() {
+        if ($('#wpoi-webcam-image').length === 0) return;
+        
         // Utiliza timestamp para evitar caché
         const timestamp = new Date().getTime();
         const webcamUrl = wpoi.octoprint_url + '/webcam/?_=' + timestamp;
@@ -220,7 +232,7 @@ jQuery(document).ready(function($) {
      * Formatear tiempo en segundos a formato legible
      */
     function formatTime(seconds) {
-        if (!seconds || seconds < 0) {
+        if (seconds === null || seconds === undefined || seconds < 0) {
             return 'Desconocido';
         }
         
