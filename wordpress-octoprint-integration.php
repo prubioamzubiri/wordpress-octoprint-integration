@@ -41,30 +41,34 @@ class WordPress_OctoPrint_Integration {
         // Registrar API endpoints de WordPress para comunicarse con OctoPrint
         add_action('rest_api_init', array($this, 'register_rest_routes'));
         
-        // Manejar la subida de archivos STL
+        // Manejar la subida de archivos STL y GCODE
         add_action('wp_ajax_wpoi_upload_stl', array($this, 'handle_stl_upload'));
         add_action('wp_ajax_nopriv_wpoi_upload_stl', array($this, 'handle_stl_upload_nopriv'));
         
-        // Añadir soporte para subir archivos STL
+        // Añadir soporte para subir archivos STL y GCODE
         add_filter('upload_mimes', array($this, 'add_stl_mime_type'));
         add_filter('wp_check_filetype_and_ext', array($this, 'check_filetype_and_ext'), 10, 5);
     }
     
     /**
-     * Añadir tipo MIME STL
+     * Añadir tipo MIME STL y GCODE
      */
     public function add_stl_mime_type($mimes) {
         $mimes['stl'] = 'application/sla';
+        $mimes['gcode'] = 'text/x.gcode';
         return $mimes;
     }
     
     /**
-     * Verificar tipo de archivo STL
+     * Verificar tipo de archivo STL y GCODE
      */
     public function check_filetype_and_ext($data, $file, $filename, $mimes, $real_mime = '') {
         if (preg_match('/\.stl$/i', $filename)) {
             $data['ext'] = 'stl';
             $data['type'] = 'application/sla';
+        } else if (preg_match('/\.gcode$/i', $filename)) {
+            $data['ext'] = 'gcode';
+            $data['type'] = 'text/x.gcode';
         }
         return $data;
     }
@@ -381,7 +385,7 @@ class WordPress_OctoPrint_Integration {
     }
     
     /**
-     * Manejar la subida de archivos STL (para usuarios logueados)
+     * Manejar la subida de archivos STL y GCODE (para usuarios logueados)
      */
     public function handle_stl_upload() {
         // Verificar nonce
@@ -398,8 +402,11 @@ class WordPress_OctoPrint_Integration {
         
         // Verificar tipo de archivo
         $filetype = wp_check_filetype(basename($file['name']));
-        if ($filetype['ext'] != 'stl' && strtolower(pathinfo($file['name'], PATHINFO_EXTENSION)) != 'stl') {
-            wp_send_json_error('Solo se permiten archivos STL.');
+        $file_ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+        
+        if (($filetype['ext'] != 'stl' && $file_ext != 'stl') && 
+            ($filetype['ext'] != 'gcode' && $file_ext != 'gcode')) {
+            wp_send_json_error('Solo se permiten archivos STL o GCODE.');
         }
         
         // Enviar a OctoPrint
@@ -555,7 +562,7 @@ class WordPress_OctoPrint_Integration {
     }
     
     /**
-     * Shortcode para subir archivos STL e imprimirlos
+     * Shortcode para subir archivos STL o GCODE e imprimirlos
      */
     public function octoprint_upload_shortcode($atts) {
         $atts = shortcode_atts(array(
@@ -566,7 +573,7 @@ class WordPress_OctoPrint_Integration {
         // Si no se permiten invitados y el usuario no está logueado, mostrar mensaje
         if ($atts['allow_guest'] === 'false' && !is_user_logged_in()) {
             return '<div class="wpoi-container"><div class="wpoi-status-box">
-                <p>Debe iniciar sesión para subir archivos STL.</p>
+                <p>Debe iniciar sesión para subir archivos STL o GCODE.</p>
                 <a href="' . wp_login_url(get_permalink()) . '" class="button">Iniciar sesión</a>
             </div></div>';
         }
@@ -575,12 +582,12 @@ class WordPress_OctoPrint_Integration {
         ?>
         <div class="wpoi-container">
             <div class="wpoi-status-box wpoi-upload-box">
-                <h3>Subir modelo STL para imprimir</h3>
+                <h3>Subir modelo para imprimir</h3>
                 
                 <form id="wpoi-stl-upload-form" method="post" enctype="multipart/form-data">
                     <div class="wpoi-form-row">
-                        <label for="wpoi-stl-file">Seleccionar archivo STL:</label>
-                        <input type="file" id="wpoi-stl-file" name="stl_file" accept=".stl" required>
+                        <label for="wpoi-stl-file">Seleccionar archivo (STL o GCODE):</label>
+                        <input type="file" id="wpoi-stl-file" name="stl_file" accept=".stl,.gcode" required>
                     </div>
                     
                     <div class="wpoi-form-row">
@@ -622,15 +629,15 @@ class WordPress_OctoPrint_Integration {
                 var fileInput = $('#wpoi-stl-file')[0];
                 
                 if (fileInput.files.length === 0) {
-                    $('#wpoi-upload-status').html('Por favor, seleccione un archivo STL').show().removeClass('success').addClass('error');
+                    $('#wpoi-upload-status').html('Por favor, seleccione un archivo STL o GCODE').show().removeClass('success').addClass('error');
                     return false;
                 }
                 
                 var file = fileInput.files[0];
                 var fileName = file.name.toLowerCase();
                 
-                if (!fileName.endsWith('.stl')) {
-                    $('#wpoi-upload-status').html('Solo se permiten archivos STL').show().removeClass('success').addClass('error');
+                if (!fileName.endsWith('.stl') && !fileName.endsWith('.gcode')) {
+                    $('#wpoi-upload-status').html('Solo se permiten archivos STL o GCODE').show().removeClass('success').addClass('error');
                     return false;
                 }
                 

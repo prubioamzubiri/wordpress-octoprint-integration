@@ -1,5 +1,5 @@
 /**
- * WordPress OctoPrint Integration - Scripts para subida de STL
+ * WordPress OctoPrint Integration - Scripts para subida de STL y GCODE
  */
 jQuery(document).ready(function($) {
     // Verificar si existe el formulario de subida
@@ -13,15 +13,15 @@ jQuery(document).ready(function($) {
             var fileInput = $('#wpoi-stl-file')[0];
             
             if (fileInput.files.length === 0) {
-                showMessage('Por favor, seleccione un archivo STL', 'error');
+                showMessage('Por favor, seleccione un archivo STL o GCODE', 'error');
                 return false;
             }
             
             var file = fileInput.files[0];
             var fileName = file.name.toLowerCase();
             
-            if (!fileName.endsWith('.stl')) {
-                showMessage('Solo se permiten archivos STL', 'error');
+            if (!fileName.endsWith('.stl') && !fileName.endsWith('.gcode')) {
+                showMessage('Solo se permiten archivos STL o GCODE', 'error');
                 return false;
             }
             
@@ -147,11 +147,15 @@ jQuery(document).ready(function($) {
             if (item.type === 'folder' && item.children) {
                 // Es una carpeta, iterar por sus hijos
                 item.children.forEach(function(file) {
-                    if (file.type === 'machinecode' || (file.name && file.name.toLowerCase().endsWith('.stl'))) {
+                    if (file.type === 'machinecode' || 
+                        (file.name && (file.name.toLowerCase().endsWith('.stl') || 
+                                      file.name.toLowerCase().endsWith('.gcode')))) {
                         html += createFileRow(file.name, file.size, 'local/' + file.path);
                     }
                 });
-            } else if (item.type === 'machinecode' || (item.name && item.name.toLowerCase().endsWith('.stl'))) {
+            } else if (item.type === 'machinecode' || 
+                      (item.name && (item.name.toLowerCase().endsWith('.stl') || 
+                                    item.name.toLowerCase().endsWith('.gcode')))) {
                 // Es un archivo directamente en la raíz
                 html += createFileRow(item.name, item.size, 'local/' + item.path);
             }

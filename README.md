@@ -35,9 +35,9 @@ Puedes personalizar la visualización con atributos:
 [octoprint_status show_temp="true" show_progress="true" show_webcam="true"]
 ```
 
-### Subida e impresión de archivos STL
+### Subida e impresión de archivos STL y GCODE
 
-Para permitir a los usuarios subir archivos STL directamente a OctoPrint e imprimirlos, usa el shortcode `[octoprint_upload]` en cualquier página o entrada.
+Para permitir a los usuarios subir archivos STL o GCODE directamente a OctoPrint e imprimirlos, usa el shortcode `[octoprint_upload]` en cualquier página o entrada.
 
 Puedes personalizar este shortcode con atributos:
 
@@ -63,12 +63,12 @@ Donde:
   - Cancelar impresión
 
 ### Subida e impresión de archivos (`[octoprint_upload]`)
-- Subida directa de archivos STL a OctoPrint
+- Subida directa de archivos STL y GCODE a OctoPrint
 - Opción para imprimir inmediatamente el archivo subido
 - Listado de archivos disponibles en OctoPrint
 - Funcionalidad para imprimir archivos existentes con un solo clic
 - Barra de progreso durante la subida
-- Validación de archivos (solo STL)
+- Validación de archivos (solo STL y GCODE)
 - Mensajes de estado informativos
 
 ## Requisitos técnicos
