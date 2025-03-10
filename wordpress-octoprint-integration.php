@@ -3,7 +3,7 @@
  * Plugin Name: WordPress OctoPrint Integration
  * Plugin URI: https://zubirimanteo.com
  * Description: Integra OctoPrint con WordPress para monitorear y controlar tu impresora 3D
- * Version: 0.3.1
+ * Version: 0.3.2
  * Author: Pablo Rubio, Miren Esnaola
  * License: GPL-2.0+
  */
@@ -533,6 +533,13 @@ class WordPress_OctoPrint_Integration {
             <div class="wpoi-status-box">
                 <h3>Estado de la impresora</h3>
                 <div id="wpoi-printer-status">Cargando...</div>
+
+                <div class="wpoi-controls">
+                    <button id="wpoi-btn-home" class="wpoi-button">Home</button>
+                    <button id="wpoi-btn-pause" class="wpoi-button">Pausar</button>
+                    <button id="wpoi-btn-resume" class="wpoi-button">Reanudar</button>
+                    <button id="wpoi-btn-cancel" class="wpoi-button">Cancelar</button>
+                </div>
                 
                 <?php if ($atts['show_temp'] === 'true'): ?>
                 <div class="wpoi-temperatures">
@@ -558,12 +565,7 @@ class WordPress_OctoPrint_Integration {
                 </div>
                 <?php endif; ?>
                 
-                <div class="wpoi-controls">
-                    <button id="wpoi-btn-home" class="wpoi-button">Home</button>
-                    <button id="wpoi-btn-pause" class="wpoi-button">Pausar</button>
-                    <button id="wpoi-btn-resume" class="wpoi-button">Reanudar</button>
-                    <button id="wpoi-btn-cancel" class="wpoi-button">Cancelar</button>
-                </div>
+
             </div>
         </div>
         <?php
