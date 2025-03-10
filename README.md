@@ -93,15 +93,6 @@ El plugin está diseñado para funcionar junto con:
 - **BuddyPress/bbPress**: Crea comunidades de impresión 3D donde los usuarios pueden compartir y enviar modelos.
 - **Membership plugins**: Restringe el acceso a la impresión 3D solo a miembros pagados.
 
-## Próximas mejoras
-
-- Implementar un sistema de colas de impresión
-- Añadir gráficos de temperatura en tiempo real
-- Soporte para múltiples impresoras
-- Panel de administración avanzado con estadísticas
-- Notificaciones por email o push cuando se complete una impresión
-- Integración con servicios de diseño 3D online
-
 ## Créditos
 
 Desarrollado por Pablo Rubio y Miren Esnaola

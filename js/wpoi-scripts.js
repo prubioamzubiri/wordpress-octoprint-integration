@@ -6,6 +6,12 @@ jQuery(document).ready(function($) {
     let refreshInterval;
     const updateInterval = 5000; // Actualizar cada 5 segundos
     
+    // Variables para el seguimiento del estado
+    let printerStatus = 'Offline';
+    let isOperational = false;
+    let isPrinting = false;
+    let isPaused = false;
+    
     // Inicializar si existe el contenedor
     if ($('.wpoi-container').length > 0 && $('#wpoi-printer-status').length > 0) {
         // Iniciar actualizaciones periódicas
@@ -181,20 +187,20 @@ jQuery(document).ready(function($) {
             sendCommand('home', { axes: ['x', 'y', 'z'] });
         });
         
-        // Botón Pausar
+        // Botón Pausar - Ahora usa sendJobCommand en lugar de sendCommand
         $('#wpoi-btn-pause').on('click', function() {
-            sendCommand('pause', { action: 'pause' });
+            sendJobCommand('pause', 'pause');
         });
         
-        // Botón Reanudar
+        // Botón Reanudar - Ahora usa sendJobCommand en lugar de sendCommand
         $('#wpoi-btn-resume').on('click', function() {
-            sendCommand('pause', { action: 'resume' });
+            sendJobCommand('pause', 'resume');
         });
         
-        // Botón Cancelar
+        // Botón Cancelar - Ahora usa sendJobCommand en lugar de sendCommand
         $('#wpoi-btn-cancel').on('click', function() {
             if (confirm('¿Estás seguro de que quieres cancelar la impresión?')) {
-                sendCommand('cancel');
+                sendJobCommand('cancel');
             }
         });
     }
@@ -211,7 +217,7 @@ jQuery(document).ready(function($) {
             },
             data: {
                 command: command,
-                params: params
+                action: params
             },
             success: function(response) {
                 if (response.success) {
@@ -224,6 +230,66 @@ jQuery(document).ready(function($) {
             },
             error: function() {
                 alert('Error de conexión al enviar el comando');
+            }
+        });
+    }
+    
+    /**
+     * Enviar comando de trabajo a OctoPrint (pause, resume, cancel)
+     */
+    function sendJobCommand(command, action = null) {
+        console.log('Sending job command:', command, 'Action:', action);
+        
+        const data = {
+            command: command
+        };
+        
+        // Si se proporciona una acción (para pausar/reanudar)
+        if (action) {
+            data.action = action;
+        }
+        
+        $.ajax({
+            url: wpoi.rest_url + 'job',
+            method: 'POST',
+            beforeSend: function(xhr) {
+                xhr.setRequestHeader('X-WP-Nonce', wpoi.nonce);
+            },
+            data: data,
+            success: function(response) {
+                console.log('Job command response:', response);
+                
+                if (response.success) {
+                    // Actualizar estado según el comando
+                    if (command === 'pause' && action === 'pause') {
+                        isPaused = true;
+                        isPrinting = false;
+                        $('#wpoi-printer-status').text('Pausada').removeClass().addClass('wpoi-status-paused');
+                    } else if (command === 'pause' && action === 'resume') {
+                        isPaused = false;
+                        isPrinting = true;
+                        $('#wpoi-printer-status').text('Imprimiendo').removeClass().addClass('wpoi-status-printing');
+                    } else if (command === 'cancel') {
+                        isPaused = false;
+                        isPrinting = false;
+                        $('#wpoi-printer-status').text('Conectada y lista').removeClass().addClass('wpoi-status-operational');
+                        $('#wpoi-progress-inner').css('width', '0%').text('0%');
+                        $('#wpoi-job-info').html('Sin trabajo activo');
+                    }
+                    
+                    // Actualizar inmediatamente después de un comando
+                    setTimeout(function() {
+                        updatePrinterStatus();
+                        updateJobStatus();
+                    }, 1000); // Small delay to allow OctoPrint to update
+                } else {
+                    alert('Error: ' + (response.message || 'Fallo al enviar el comando de trabajo'));
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('AJAX error:', status, error);
+                console.log('Response text:', xhr.responseText);
+                alert('Error de conexión al enviar el comando de trabajo');
             }
         });
     }

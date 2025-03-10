@@ -1,9 +1,9 @@
 <?php
 /**
  * Plugin Name: WordPress OctoPrint Integration
- * Plugin URI: https://example.com/wordpress-octoprint
+ * Plugin URI: https://zubirimanteo.com
  * Description: Integra OctoPrint con WordPress para monitorear y controlar tu impresora 3D
- * Version: 0.3
+ * Version: 0.3.1
  * Author: Pablo Rubio, Miren Esnaola
  * License: GPL-2.0+
  */
@@ -221,6 +221,15 @@ class WordPress_OctoPrint_Integration {
         register_rest_route('wpoi/v1', '/files', array(
             'methods' => 'GET',
             'callback' => array($this, 'get_files_list'),
+            'permission_callback' => function() {
+                return current_user_can('edit_posts');
+            }
+        ));
+        
+        // Añadir endpoint POST para controlar trabajos (pause, resume, cancel)
+        register_rest_route('wpoi/v1', '/job', array(
+            'methods' => 'POST',
+            'callback' => array($this, 'control_job'),
             'permission_callback' => function() {
                 return current_user_can('edit_posts');
             }
@@ -802,6 +811,33 @@ class WordPress_OctoPrint_Integration {
         </script>
         <?php
         return ob_get_clean();
+    }
+    
+    /**
+     * Control de trabajo de impresión (pausar, reanudar, cancelar)
+     */
+    public function control_job($request) {
+        $command = $request->get_param('command');
+        $action = $request->get_param('action'); // 'pause' o 'resume'
+        
+        // Log for debugging
+        error_log('OctoPrint job command: ' . $command . ', action: ' . $action);
+        
+        $data = array(
+            'command' => $command
+        );
+        
+        if ($command === 'pause' && !empty($action)) {
+            $data['action'] = $action;
+        }
+        
+        // Send to OctoPrint job API endpoint
+        $response = $this->request_octoprint('api/job', 'POST', $data);
+        
+        // Log response for debugging
+        error_log('OctoPrint response: ' . json_encode($response));
+        
+        return rest_ensure_response($response);
     }
     
     /**
