@@ -198,53 +198,6 @@ class WPOI_Shortcodes {
             });
             
             <?php if ($atts['show_files'] === 'true'): ?>
-            // Cargar la lista de archivos
-            function loadFilesList() {
-                $.ajax({
-                    url: wpoi.rest_url + 'files',
-                    method: 'GET',
-                    beforeSend: function(xhr) {
-                        xhr.setRequestHeader('X-WP-Nonce', wpoi.nonce);
-                    },
-                    success: function(response) {
-                        if (response.success && response.data.files) {
-                            displayFilesList(response.data.files);
-                        } else {
-                            $('#wpoi-files-list').html('<p>Error al cargar la lista de archivos</p>');
-                        }
-                    },
-                    error: function() {
-                        $('#wpoi-files-list').html('<p>Error de conexión</p>');
-                    }
-                });
-            }
-            
-            // Mostrar la lista de archivos
-            function displayFilesList(files) {
-                if (!files.length) {
-                    $('#wpoi-files-list').html('<p>No hay archivos disponibles</p>');
-                    return;
-                }
-                
-                var html = '<table class="wpoi-files-table">';
-                html += '<thead><tr><th>Nombre</th><th>Tamaño</th><th>Acción</th></tr></thead>';
-                html += '<tbody>';
-                
-                files.forEach(function(file) {
-                    if (file.type === 'folder') {
-                        // Call processFolder properly to append content to html
-                        html = processFolder(file, html);
-                    } else {
-                        html += '<tr>';
-                        html += '<td>' + file.name + '</td>';
-                        html += '<td>' + formatFileSize(file.size) + '</td>';
-                        html += '<td>';
-                        html += '<button class="wpoi-button print-file" data-path="local/' + file.path + '">Imprimir</button> ';
-                        html += '<button class="wpoi-button delete-file" data-path="local/' + file.path + '">Eliminar</button>';
-                        html += '</td>';
-                        html += '</tr>';
-                    }
-                });
                 
                 html += '</tbody></table>';
                 $('#wpoi-files-list').html(html);

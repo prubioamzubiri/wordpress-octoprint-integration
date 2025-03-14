@@ -88,6 +88,24 @@ class WPOI_API {
                 return current_user_can('edit_posts');
             }
         ));
+
+        // Add route for creating folders
+        register_rest_route('wpoi/v1', '/create-folder', array(
+            'methods' => 'POST',
+            'callback' => array($this, 'create_folder'),
+            'permission_callback' => function() {
+                return current_user_can('edit_posts');
+            }
+        ));
+        
+        // Add route for deleting folders
+        register_rest_route('wpoi/v1', '/delete-folder', array(
+            'methods' => 'POST',
+            'callback' => array($this, 'delete_folder'),
+            'permission_callback' => function() {
+                return current_user_can('edit_posts');
+            }
+        ));
     }
     
     /**
@@ -129,8 +147,41 @@ class WPOI_API {
      * Listar archivos disponibles en OctoPrint
      */
     public function get_files_list($request) {
-        $response = $this->main->request_octoprint('api/files');
-        return rest_ensure_response($response);
+        $path = $request->get_param('path');
+        
+        // Add debugging
+        error_log('WPOI get_files_list request path: ' . (string)$path);
+        
+        if (!empty($path)) {
+            // Get specific folder contents
+            $endpoint = 'api/files/local/' . ltrim($path, '/');
+            
+            // Debug endpoint
+            error_log('Requesting folder contents from: ' . $endpoint);
+            
+            // Make the API request to OctoPrint
+            $response = $this->main->request_octoprint($endpoint);
+            
+            // If successful, ensure we're returning the folder contents properly
+            if (isset($response['success']) && $response['success'] && isset($response['data'])) {
+                error_log('Successfully fetched folder contents');
+                return rest_ensure_response($response);
+            } else {
+                error_log('Error fetching folder contents: ' . json_encode($response));
+                return rest_ensure_response(array(
+                    'success' => false,
+                    'message' => 'Error al obtener contenido de la carpeta',
+                    'response' => $response
+                ));
+            }
+        } else {
+            // Get root files and folders
+            $endpoint = 'api/files';
+            error_log('Requesting root files from: ' . $endpoint);
+            
+            $response = $this->main->request_octoprint($endpoint);
+            return rest_ensure_response($response);
+        }
     }
     
     /**
@@ -322,6 +373,138 @@ class WPOI_API {
             return array(
                 'success' => false,
                 'message' => 'Error al eliminar el archivo: ' . $error_message,
+                'status' => $status
+            );
+        }
+    }
+
+    /**
+     * Create a new folder in OctoPrint
+     */
+    public function create_folder($request) {
+        $folder_name = $request->get_param('folder_name');
+        $path = $request->get_param('path');
+        
+        if (empty($folder_name)) {
+            return new WP_Error('missing_param', 'Nombre de carpeta requerido', array('status' => 400));
+        }
+        
+        // Debug log
+        error_log('Creating folder: ' . $folder_name . ' in path: ' . $path);
+        
+        // Create folder via OctoPrint API using multipart/form-data format
+        $url = trailingslashit($this->main->get_octoprint_url()) . 'api/files/local';
+        
+        // Generate a boundary for multipart form
+        $boundary = wp_generate_password(24, false);
+        
+        $body = '';
+        // Add foldername part
+        $body .= '--' . $boundary . "\r\n";
+        $body .= 'Content-Disposition: form-data; name="foldername"' . "\r\n\r\n";
+        $body .= $folder_name . "\r\n";
+        
+        // Add path part if specified
+        if (!empty($path)) {
+            $body .= '--' . $boundary . "\r\n";
+            $body .= 'Content-Disposition: form-data; name="path"' . "\r\n\r\n";
+            $body .= $path . '/' . "\r\n"; // Path must end with '/'
+        }
+        
+        // Close the body
+        $body .= '--' . $boundary . '--' . "\r\n";
+        
+        // Log the request body for debugging
+        error_log('Folder creation request body: ' . $body);
+        
+        $headers = array(
+            'X-Api-Key' => $this->main->get_api_key(),
+            'Content-Type' => 'multipart/form-data; boundary=' . $boundary,
+        );
+        
+        $response = wp_remote_post($url, array(
+            'headers' => $headers,
+            'body' => $body,
+            'timeout' => 30
+        ));
+        
+        if (is_wp_error($response)) {
+            error_log('Folder creation error: ' . $response->get_error_message());
+            return array(
+                'success' => false,
+                'message' => $response->get_error_message()
+            );
+        }
+        
+        $status = wp_remote_retrieve_response_code($response);
+        $body = wp_remote_retrieve_body($response);
+        
+        // Log full response for debugging
+        error_log('Folder creation response status: ' . $status);
+        error_log('Folder creation response body: ' . $body);
+        
+        if ($status >= 200 && $status < 300) {
+            return array(
+                'success' => true,
+                'message' => 'Carpeta creada correctamente'
+            );
+        } else {
+            $error_data = json_decode($body, true);
+            $error_message = isset($error_data['error']) ? $error_data['error'] : 'Error desconocido';
+            
+            return array(
+                'success' => false,
+                'message' => 'Error al crear la carpeta: ' . $error_message,
+                'status' => $status
+            );
+        }
+    }
+    
+    /**
+     * Delete a folder from OctoPrint
+     */
+    public function delete_folder($request) {
+        $folder_path = $request->get_param('folder_path');
+        
+        if (!$folder_path) {
+            return new WP_Error('no_folder', 'No se especificó una carpeta para eliminar', array('status' => 400));
+        }
+        
+        // Send DELETE request to OctoPrint
+        $url = trailingslashit($this->main->get_octoprint_url()) . 'api/files/' . $folder_path;
+        
+        $response = wp_remote_request($url, array(
+            'method' => 'DELETE',
+            'headers' => array(
+                'X-Api-Key' => $this->main->get_api_key(),
+                'Content-Type' => 'application/json'
+            ),
+            'timeout' => 30,
+        ));
+        
+        if (is_wp_error($response)) {
+            return array(
+                'success' => false,
+                'message' => $response->get_error_message()
+            );
+        }
+        
+        $status = wp_remote_retrieve_response_code($response);
+        
+        // OctoPrint returns 204 (No Content) on successful deletion
+        if ($status === 204) {
+            return array(
+                'success' => true,
+                'message' => 'Carpeta eliminada correctamente'
+            );
+        } else {
+            $body = wp_remote_retrieve_body($response);
+            $error_data = json_decode($body, true);
+            $error_message = isset($error_data['error']) ? $error_data['error'] : 'Error desconocido';
+            
+            return array(
+                'success' => false,
+                'message' => 'Error al eliminar la carpeta: ' . $error_message,
                 'status' => $status
             );
         }

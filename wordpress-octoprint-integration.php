@@ -3,7 +3,7 @@
  * Plugin Name: WordPress OctoPrint Integration
  * Plugin URI: https://zubirimanteo.com
  * Description: Integra OctoPrint con WordPress para monitorear y controlar tu impresora 3D
- * Version: 0.3.3
+ * Version: 0.3.4
  * Author: Pablo Rubio, Miren Esnaola
  * License: GPL-2.0+
  */
@@ -16,7 +16,7 @@ if (!defined('ABSPATH')) {
 // Define plugin constants
 define('WPOI_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('WPOI_PLUGIN_URL', plugin_dir_url(__FILE__));
-define('WPOI_VERSION', '0.3.3');
+define('WPOI_VERSION', '0.3.4');
 
 // Include required files
 require_once WPOI_PLUGIN_DIR . 'includes/class-wpoi-main.php';
