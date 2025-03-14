@@ -80,7 +80,6 @@ Ejemplos:
 - Visualización del estado actual de la impresora (Operativa, Imprimiendo, Pausada, Desconectada)
 - Monitoreo de temperaturas (extrusor y cama)
 - Progreso de impresión con tiempo estimado y tiempo transcurrido
-- Visualización de la webcam en tiempo real
 - Controles básicos:
   - Home (reinicio de ejes)
   - Pausar impresión
@@ -95,6 +94,12 @@ Ejemplos:
 - Barra de progreso durante la subida
 - Validación de archivos (solo STL y GCODE)
 - Mensajes de estado informativos
+
+### Monitoreo a través de la webcam (`[octoprint_webcam]`)
+- Visualización de la webcam de la impresora
+- Actualización automática de la imagen
+- Controles de rotación y zoom (opcional)
+- Soporte para MJPG stream (opcional)
 
 ## Requisitos técnicos
 
