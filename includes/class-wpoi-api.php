@@ -389,25 +389,47 @@ class WPOI_API {
             return new WP_Error('missing_param', 'Nombre de carpeta requerido', array('status' => 400));
         }
         
-        // Construct folder path
-        $folder_path = !empty($path) ? trim($path, '/') . '/' . $folder_name : $folder_name;
+        // Debug log
+        error_log('Creating folder: ' . $folder_name . ' in path: ' . $path);
         
-        // Create folder via OctoPrint API
+        // Create folder via OctoPrint API using multipart/form-data format
         $url = trailingslashit($this->main->get_octoprint_url()) . 'api/files/local';
         
+        // Generate a boundary for multipart form
+        $boundary = wp_generate_password(24, false);
+        
+        $body = '';
+        // Add foldername part
+        $body .= '--' . $boundary . "\r\n";
+        $body .= 'Content-Disposition: form-data; name="foldername"' . "\r\n\r\n";
+        $body .= $folder_name . "\r\n";
+        
+        // Add path part if specified
+        if (!empty($path)) {
+            $body .= '--' . $boundary . "\r\n";
+            $body .= 'Content-Disposition: form-data; name="path"' . "\r\n\r\n";
+            $body .= $path . '/' . "\r\n"; // Path must end with '/'
+        }
+        
+        // Close the body
+        $body .= '--' . $boundary . '--' . "\r\n";
+        
+        // Log the request body for debugging
+        error_log('Folder creation request body: ' . $body);
+        
+        $headers = array(
+            'X-Api-Key' => $this->main->get_api_key(),
+            'Content-Type' => 'multipart/form-data; boundary=' . $boundary,
+        );
+        
         $response = wp_remote_post($url, array(
-            'headers' => array(
-                'X-Api-Key' => $this->main->get_api_key(),
-                'Content-Type' => 'application/json'
-            ),
-            'body' => json_encode(array(
-                'command' => 'mkdir',
-                'foldername' => $folder_path
-            )),
-            'method' => 'POST',
+            'headers' => $headers,
+            'body' => $body,
+            'timeout' => 30
         ));
         
         if (is_wp_error($response)) {
+            error_log('Folder creation error: ' . $response->get_error_message());
             return array(
                 'success' => false,
                 'message' => $response->get_error_message()
@@ -415,6 +437,11 @@ class WPOI_API {
         }
         
         $status = wp_remote_retrieve_response_code($response);
+        $body = wp_remote_retrieve_body($response);
+        
+        // Log full response for debugging
+        error_log('Folder creation response status: ' . $status);
+        error_log('Folder creation response body: ' . $body);
         
         if ($status >= 200 && $status < 300) {
             return array(
@@ -422,7 +449,6 @@ class WPOI_API {
                 'message' => 'Carpeta creada correctamente'
             );
         } else {
-            $body = wp_remote_retrieve_body($response);
             $error_data = json_decode($body, true);
             $error_message = isset($error_data['error']) ? $error_data['error'] : 'Error desconocido';
             

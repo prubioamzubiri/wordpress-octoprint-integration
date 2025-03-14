@@ -422,26 +422,66 @@ jQuery(document).ready(function($) {
             return;
         }
         
+        // Show a loading message
+        var loadingMsg = 'Creando carpeta...';
+        if ($('#wpoi-upload-status').length) {
+            $('#wpoi-upload-status').html(loadingMsg).removeClass('error success').addClass('info').show();
+        } else {
+            alert(loadingMsg);
+        }
+        
+        console.log('Creating folder:', folderName, 'in path:', currentPath);
+        
+        // Use FormData to properly construct multipart/form-data request
+        var formData = new FormData();
+        formData.append('folder_name', folderName);
+        if (currentPath) {
+            formData.append('path', currentPath);
+        }
+        
         $.ajax({
             url: wpoi.rest_url + 'create-folder',
             method: 'POST',
+            data: formData,
+            contentType: false,
+            processData: false,
             beforeSend: function(xhr) {
                 xhr.setRequestHeader('X-WP-Nonce', wpoi.nonce);
             },
-            data: {
-                folder_name: folderName,
-                path: currentPath
-            },
             success: function(response) {
+                console.log('Folder creation response:', response);
+                
                 if (response.success) {
-                    alert('Carpeta creada correctamente');
+                    if ($('#wpoi-upload-status').length) {
+                        $('#wpoi-upload-status').html('Carpeta creada correctamente').removeClass('error info').addClass('success');
+                    } else {
+                        alert('Carpeta creada correctamente');
+                    }
                     loadFilesList();
                 } else {
-                    alert('Error: ' + (response.message || 'No se pudo crear la carpeta'));
+                    var errorMsg = response.message || 'No se pudo crear la carpeta';
+                    console.error('Folder creation error:', errorMsg);
+                    
+                    if ($('#wpoi-upload-status').length) {
+                        $('#wpoi-upload-status').html('Error: ' + errorMsg).removeClass('success info').addClass('error');
+                    } else {
+                        alert('Error: ' + errorMsg);
+                    }
                 }
             },
-            error: function() {
-                alert('Error al crear la carpeta');
+            error: function(xhr, status, error) {
+                console.error('Folder creation AJAX error:', status, error);
+                
+                var errorMsg = 'Error de conexión';
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMsg = xhr.responseJSON.message;
+                }
+                
+                if ($('#wpoi-upload-status').length) {
+                    $('#wpoi-upload-status').html('Error: ' + errorMsg).removeClass('success info').addClass('error');
+                } else {
+                    alert('Error al crear la carpeta: ' + errorMsg);
+                }
             }
         });
     }
