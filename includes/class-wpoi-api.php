@@ -71,6 +71,15 @@ class WPOI_API {
             }
         ));
         
+        // Añadir ruta para eliminar archivos
+        register_rest_route('wpoi/v1', '/delete-file', array(
+            'methods' => 'POST',
+            'callback' => array($this, 'delete_file'),
+            'permission_callback' => function() {
+                return current_user_can('edit_posts');
+            }
+        ));
+        
         // Añadir endpoint POST para controlar trabajos (pause, resume, cancel)
         register_rest_route('wpoi/v1', '/job', array(
             'methods' => 'POST',
@@ -263,5 +272,58 @@ class WPOI_API {
         error_log('OctoPrint response: ' . json_encode($response));
         
         return rest_ensure_response($response);
+    }
+
+    /**
+     * Eliminar un archivo de OctoPrint
+     * 
+     * @param WP_REST_Request $request Request object
+     * @return WP_REST_Response Response object
+     */
+    public function delete_file($request) {
+        $file_path = $request->get_param('file_path');
+        
+        if (!$file_path) {
+            return new WP_Error('no_file', 'No se especificó un archivo para eliminar', array('status' => 400));
+        }
+        
+        // Enviar solicitud DELETE a OctoPrint para eliminar el archivo
+        $url = trailingslashit($this->main->get_octoprint_url()) . 'api/files/' . $file_path;
+        
+        $response = wp_remote_request($url, array(
+            'method' => 'DELETE',
+            'headers' => array(
+                'X-Api-Key' => $this->main->get_api_key(),
+                'Content-Type' => 'application/json'
+            ),
+            'timeout' => 30,
+        ));
+        
+        if (is_wp_error($response)) {
+            return array(
+                'success' => false,
+                'message' => $response->get_error_message()
+            );
+        }
+        
+        $status = wp_remote_retrieve_response_code($response);
+        
+        // OctoPrint returns 204 (No Content) on successful deletion
+        if ($status === 204) {
+            return array(
+                'success' => true,
+                'message' => 'Archivo eliminado correctamente'
+            );
+        } else {
+            $body = wp_remote_retrieve_body($response);
+            $error_data = json_decode($body, true);
+            $error_message = isset($error_data['error']) ? $error_data['error'] : 'Error desconocido';
+            
+            return array(
+                'success' => false,
+                'message' => 'Error al eliminar el archivo: ' . $error_message,
+                'status' => $status
+            );
+        }
     }
 }
