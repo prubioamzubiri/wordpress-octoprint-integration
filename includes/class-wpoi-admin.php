@@ -34,14 +34,57 @@ class WPOI_Admin {
      * Registrar ajustes
      */
     public function register_settings() {
-        register_setting('wpoi_settings', 'wpoi_octoprint_url');
-        register_setting('wpoi_settings', 'wpoi_api_key');
+        register_setting('wpoi_settings', 'wpoi_settings');
+        
+        add_settings_section(
+            'wpoi_settings_section',
+            __('Configuración de OctoPrint', 'wordpress-octoprint-integration'),
+            array($this, 'settings_section_callback'),
+            'wpoi_settings'
+        );
+        
+        add_settings_field(
+            'octoprint_url',
+            __('URL de OctoPrint', 'wordpress-octoprint-integration'),
+            array($this, 'octoprint_url_callback'),
+            'wpoi_settings',
+            'wpoi_settings_section'
+        );
+        
+        add_settings_field(
+            'api_key',
+            __('API Key', 'wordpress-octoprint-integration'),
+            array($this, 'api_key_callback'),
+            'wpoi_settings',
+            'wpoi_settings_section'
+        );
+        
+        // Add webcam settings fields
+        add_settings_field(
+            'webcam_stream_url',
+            __('URL de Stream Webcam', 'wordpress-octoprint-integration'),
+            array($this, 'webcam_stream_url_callback'),
+            'wpoi_settings',
+            'wpoi_settings_section'
+        );
+        
+        add_settings_field(
+            'webcam_snapshot_url',
+            __('URL de Snapshot Webcam', 'wordpress-octoprint-integration'),
+            array($this, 'webcam_snapshot_url_callback'),
+            'wpoi_settings',
+            'wpoi_settings_section'
+        );
     }
     
     /**
      * Renderizar página de administración
      */
     public function admin_page() {
+        // Get settings
+        $settings = get_option('wpoi_settings', array());
+        $octoprint_url = get_option('wpoi_octoprint_url', 'http://localhost:5000');
+        $api_key = get_option('wpoi_api_key', '');
         ?>
         <div class="wrap">
             <h1>WordPress OctoPrint Integration</h1>
@@ -51,15 +94,29 @@ class WPOI_Admin {
                     <tr>
                         <th scope="row">URL de OctoPrint</th>
                         <td>
-                            <input type="text" name="wpoi_octoprint_url" value="<?php echo esc_attr(get_option('wpoi_octoprint_url', 'http://localhost:5000')); ?>" class="regular-text" />
+                            <input type="text" name="wpoi_octoprint_url" value="<?php echo esc_attr($octoprint_url); ?>" class="regular-text" />
                             <p class="description">Ejemplo: http://localhost:5000 o http://dirección-ip:5000</p>
                         </td>
                     </tr>
                     <tr>
                         <th scope="row">API Key</th>
                         <td>
-                            <input type="text" name="wpoi_api_key" value="<?php echo esc_attr(get_option('wpoi_api_key', '')); ?>" class="regular-text" />
+                            <input type="text" name="wpoi_api_key" value="<?php echo esc_attr($api_key); ?>" class="regular-text" />
                             <p class="description">Obtenido desde la interfaz de OctoPrint en Ajustes > API</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row">URL de Stream Webcam</th>
+                        <td>
+                            <input type="text" name="wpoi_settings[webcam_stream_url]" value="<?php echo esc_attr($settings['webcam_stream_url'] ?? ''); ?>" class="regular-text" />
+                            <p class="description">URL del stream de la webcam (ej. http://octopi.local/webcam/?action=stream). Déjelo en blanco para usar la URL por defecto.</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row">URL de Snapshot Webcam</th>
+                        <td>
+                            <input type="text" name="wpoi_settings[webcam_snapshot_url]" value="<?php echo esc_attr($settings['webcam_snapshot_url'] ?? ''); ?>" class="regular-text" />
+                            <p class="description">URL de snapshot de la webcam (ej. http://octopi.local/webcam/?action=snapshot). Déjelo en blanco para usar la URL por defecto.</p>
                         </td>
                     </tr>
                 </table>
@@ -93,6 +150,32 @@ class WPOI_Admin {
             });
         });
         </script>
+        <?php
+    }
+
+    /**
+     * Webcam stream URL field callback
+     */
+    public function webcam_stream_url_callback() {
+        $settings = $this->main->get_settings();
+        ?>
+        <input type="text" name="wpoi_settings[webcam_stream_url]" value="<?php echo esc_attr($settings['webcam_stream_url'] ?? ''); ?>" class="regular-text" />
+        <p class="description">
+            <?php _e('URL del stream de la webcam (ej. http://octopi.local/webcam/?action=stream). Déjelo en blanco para usar la URL por defecto.', 'wordpress-octoprint-integration'); ?>
+        </p>
+        <?php
+    }
+    
+    /**
+     * Webcam snapshot URL field callback
+     */
+    public function webcam_snapshot_url_callback() {
+        $settings = $this->main->get_settings();
+        ?>
+        <input type="text" name="wpoi_settings[webcam_snapshot_url]" value="<?php echo esc_attr($settings['webcam_snapshot_url'] ?? ''); ?>" class="regular-text" />
+        <p class="description">
+            <?php _e('URL de snapshot de la webcam (ej. http://octopi.local/webcam/?action=snapshot). Déjelo en blanco para usar la URL por defecto.', 'wordpress-octoprint-integration'); ?>
+        </p>
         <?php
     }
 }

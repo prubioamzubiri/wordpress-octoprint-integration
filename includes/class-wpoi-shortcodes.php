@@ -15,6 +15,7 @@ class WPOI_Shortcodes {
         // Registrar shortcodes
         add_shortcode('octoprint_status', array($this, 'octoprint_status_shortcode'));
         add_shortcode('octoprint_upload', array($this, 'octoprint_upload_shortcode'));
+        add_shortcode('octoprint_webcam', array($this, 'webcam_shortcode'));
     }
     
     /**
@@ -311,5 +312,161 @@ class WPOI_Shortcodes {
         </script>
         <?php
         return ob_get_clean();
+    }
+
+    /**
+     * Webcam shortcode to display the OctoPrint webcam stream
+     *
+     * @param array $atts Shortcode attributes
+     * @return string Shortcode output
+     */
+    public function webcam_shortcode($atts) {
+        // Parse shortcode attributes with defaults
+        $atts = shortcode_atts(array(
+            'width' => '100%',
+            'height' => '400px',
+            'refresh' => '5', // Refresh rate in seconds for static images
+            'mode' => 'stream', // 'stream' or 'snapshot'
+            'controls' => 'true' // Show rotation controls
+        ), $atts);
+        
+        // Get webcam URL from OctoPrint settings
+        $webcam_url = $this->get_webcam_url($atts['mode']);
+        
+        if (!$webcam_url) {
+            return '<p class="wpoi-error">No se puede obtener la URL de la webcam. Compruebe la configuración.</p>';
+        }
+        
+        // Enqueue necessary scripts
+        wp_enqueue_script('jquery');
+        
+        // Generate unique ID for this webcam instance
+        $webcam_id = 'wpoi-webcam-' . uniqid();
+        
+        $output = '<div class="wpoi-webcam-container" style="width: ' . esc_attr($atts['width']) . '; margin: 0 auto;">';
+        
+        // Add webcam viewer
+        if ($atts['mode'] == 'stream') {
+            // For MJPG stream
+            $output .= '<div class="wpoi-webcam-viewer" style="position: relative;">';
+            $output .= '<img id="' . $webcam_id . '" src="' . esc_url($webcam_url) . '" 
+                          alt="OctoPrint Webcam" 
+                          style="width: 100%; height: ' . esc_attr($atts['height']) . '; object-fit: contain;" />';
+            $output .= '</div>';
+        } else {
+            // For snapshot mode with refresh
+            $output .= '<div class="wpoi-webcam-viewer" style="position: relative;">';
+            $output .= '<img id="' . $webcam_id . '" src="' . esc_url($webcam_url) . '" 
+                          alt="OctoPrint Webcam" 
+                          style="width: 100%; height: ' . esc_attr($atts['height']) . '; object-fit: contain;"
+                          data-refresh-rate="' . esc_attr($atts['refresh']) . '"
+                          data-src="' . esc_url($webcam_url) . '" />';
+            $output .= '</div>';
+            
+            // Add refresh script for snapshot mode
+            $output .= "
+            <script type='text/javascript'>
+            jQuery(document).ready(function($) {
+                setInterval(function() {
+                    var webcam = $('#{$webcam_id}');
+                    var src = webcam.attr('data-src');
+                    webcam.attr('src', src + '?t=' + new Date().getTime());
+                }, " . (intval($atts['refresh']) * 1000) . ");
+            });
+            </script>";
+        }
+        
+        // Add webcam controls if enabled
+        if ($atts['controls'] == 'true') {
+            $output .= '
+            <div class="wpoi-webcam-controls" style="margin-top: 10px; text-align: center;">
+                <button class="button wpoi-rotate-left" data-webcam="' . $webcam_id . '">↺ Rotar izquierda</button>
+                <button class="button wpoi-flip-horizontal" data-webcam="' . $webcam_id . '">↔ Voltear horizontal</button>
+                <button class="button wpoi-flip-vertical" data-webcam="' . $webcam_id . '">↕ Voltear vertical</button>
+                <button class="button wpoi-rotate-right" data-webcam="' . $webcam_id . '">↻ Rotar derecha</button>
+            </div>
+            
+            <script type="text/javascript">
+            jQuery(document).ready(function($) {
+                var transforms = {};
+                
+                // Initialize transform for this webcam
+                transforms["' . $webcam_id . '"] = {
+                    rotateZ: 0,
+                    scaleX: 1,
+                    scaleY: 1
+                };
+                
+                function applyTransform(id) {
+                    var t = transforms[id];
+                    $("#" + id).css("transform", 
+                        "rotateZ(" + t.rotateZ + "deg) scaleX(" + t.scaleX + ") scaleY(" + t.scaleY + ")");
+                }
+                
+                $(".wpoi-rotate-left").click(function() {
+                    var id = $(this).data("webcam");
+                    transforms[id].rotateZ -= 90;
+                    applyTransform(id);
+                });
+                
+                $(".wpoi-rotate-right").click(function() {
+                    var id = $(this).data("webcam");
+                    transforms[id].rotateZ += 90;
+                    applyTransform(id);
+                });
+                
+                $(".wpoi-flip-horizontal").click(function() {
+                    var id = $(this).data("webcam");
+                    transforms[id].scaleX *= -1;
+                    applyTransform(id);
+                });
+                
+                $(".wpoi-flip-vertical").click(function() {
+                    var id = $(this).data("webcam");
+                    transforms[id].scaleY *= -1;
+                    applyTransform(id);
+                });
+            });
+            </script>';
+        }
+        
+        $output .= '</div>'; // Close webcam container
+        
+        return $output;
+    }
+    
+    /**
+     * Get the webcam URL based on mode
+     * 
+     * @param string $mode 'stream' or 'snapshot'
+     * @return string Webcam URL or false if not available
+     */
+    private function get_webcam_url($mode = 'stream') {
+        // Get settings directly from options instead of using get_settings() method
+        $settings = get_option('wpoi_settings', array());
+        
+        // Get basic OctoPrint URL
+        $octoprint_url = get_option('wpoi_octoprint_url', 'http://localhost:5000');
+        
+        // Default URLs if not specifically configured
+        if ($mode == 'stream') {
+            // First check if we have a specific stream URL
+            if (!empty($settings['webcam_stream_url'])) {
+                return $settings['webcam_stream_url'];
+            }
+            
+            // Fall back to default OctoPrint URL pattern
+            $base_url = rtrim($octoprint_url, '/');
+            return $base_url . '/webcam/?action=stream';
+        } else {
+            // First check if we have a specific snapshot URL
+            if (!empty($settings['webcam_snapshot_url'])) {
+                return $settings['webcam_snapshot_url'];
+            }
+            
+            // Fall back to default OctoPrint URL pattern
+            $base_url = rtrim($octoprint_url, '/');
+            return $base_url . '/webcam/?action=snapshot';
+        }
     }
 }

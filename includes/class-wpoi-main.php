@@ -67,17 +67,37 @@ class WPOI_Main {
     }
     
     /**
-     * Get OctoPrint URL
+     * Get plugin settings
+     * 
+     * @return array Settings array
      */
-    public function get_octoprint_url() {
-        return $this->octoprint_url;
+    public function get_settings() {
+        // Get all relevant settings
+        $settings = get_option('wpoi_settings', array());
+        
+        // Add individual settings that are stored separately
+        $settings['octoprint_url'] = get_option('wpoi_octoprint_url', 'http://localhost:5000');
+        $settings['api_key'] = get_option('wpoi_api_key', '');
+        
+        return $settings;
     }
     
     /**
-     * Get API Key
+     * Get OctoPrint URL
+     *
+     * @return string OctoPrint URL
+     */
+    public function get_octoprint_url() {
+        return get_option('wpoi_octoprint_url', 'http://localhost:5000');
+    }
+    
+    /**
+     * Get API key
+     *
+     * @return string API key
      */
     public function get_api_key() {
-        return $this->api_key;
+        return get_option('wpoi_api_key', '');
     }
     
     /**
