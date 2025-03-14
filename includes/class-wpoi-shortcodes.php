@@ -232,12 +232,16 @@ class WPOI_Shortcodes {
                 
                 files.forEach(function(file) {
                     if (file.type === 'folder') {
-                        processFolder(file, html);
+                        // Call processFolder properly to append content to html
+                        html = processFolder(file, html);
                     } else {
                         html += '<tr>';
                         html += '<td>' + file.name + '</td>';
                         html += '<td>' + formatFileSize(file.size) + '</td>';
-                        html += '<td><button class="wpoi-button print-file" data-path="local/' + file.path + '">Imprimir</button></td>';
+                        html += '<td>';
+                        html += '<button class="wpoi-button print-file" data-path="local/' + file.path + '">Imprimir</button> ';
+                        html += '<button class="wpoi-button delete-file" data-path="local/' + file.path + '">Eliminar</button>';
+                        html += '</td>';
                         html += '</tr>';
                     }
                 });
@@ -250,6 +254,14 @@ class WPOI_Shortcodes {
                     var filePath = $(this).data('path');
                     printFile(filePath);
                 });
+                
+                // Añadir listener para los botones de eliminar
+                $('.delete-file').on('click', function() {
+                    var filePath = $(this).data('path');
+                    if (confirm('¿Está seguro de que desea eliminar este archivo?')) {
+                        deleteFile(filePath);
+                    }
+                });
             }
             
             // Procesar carpetas de archivos
@@ -260,11 +272,15 @@ class WPOI_Shortcodes {
                             html += '<tr>';
                             html += '<td>' + folder.name + '/' + file.name + '</td>';
                             html += '<td>' + formatFileSize(file.size) + '</td>';
-                            html += '<td><button class="wpoi-button print-file" data-path="local/' + file.path + '">Imprimir</button></td>';
+                            html += '<td>';
+                            html += '<button class="wpoi-button print-file" data-path="local/' + file.path + '">Imprimir</button> ';
+                            html += '<button class="wpoi-button delete-file" data-path="local/' + file.path + '">Eliminar</button>';
+                            html += '</td>';
                             html += '</tr>';
                         }
                     });
                 }
+                return html; // Return the updated HTML
             }
             
             // Formatear tamaño de archivo
@@ -298,11 +314,46 @@ class WPOI_Shortcodes {
                 });
             }
             
+            // Eliminar un archivo
+            function deleteFile(filePath) {
+                $.ajax({
+                    url: wpoi.rest_url + 'delete-file',
+                    method: 'POST',
+                    beforeSend: function(xhr) {
+                        xhr.setRequestHeader('X-WP-Nonce', wpoi.nonce);
+                    },
+                    data: {
+                        file_path: filePath
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            alert('Archivo eliminado correctamente');
+                            // Recargar la lista de archivos
+                            loadFilesList();
+                        } else {
+                            alert('Error: ' + (response.message || 'No se pudo eliminar el archivo'));
+                        }
+                    },
+                    error: function(xhr) {
+                        var errorMsg = 'Error de conexión';
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            errorMsg = xhr.responseJSON.message;
+                        }
+                        alert('Error: ' + errorMsg);
+                    }
+                });
+            }
+            
             // Cargar la lista inicial de archivos
             loadFilesList();
             <?php endif; ?>
         });
         </script>
+        
+        <style>
+            /* Ensure CSS is directly included and not dependent on external file */
+
+        </style>
         <?php
         return ob_get_clean();
     }

@@ -92,6 +92,14 @@ jQuery(document).ready(function($) {
             setInterval(function() {
                 loadFilesList();
             }, 60000);
+            
+            // Add delegated event handler for delete buttons
+            $('#wpoi-files-list').on('click', '.delete-file', function() {
+                var filePath = $(this).data('path');
+                if (confirm('¿Está seguro de que desea eliminar este archivo?')) {
+                    deleteFile(filePath);
+                }
+            });
         }
     }
     
@@ -185,7 +193,10 @@ jQuery(document).ready(function($) {
         return '<tr>' +
                '<td>' + name + '</td>' +
                '<td>' + formatFileSize(size) + '</td>' +
-               '<td><button class="wpoi-button print-file" data-path="' + path + '">Imprimir</button></td>' +
+               '<td>' + 
+               '<button class="wpoi-button print-file" data-path="' + path + '">Imprimir</button> ' +
+               '<button class="wpoi-button delete-file" data-path="' + path + '">Eliminar</button>' +
+               '</td>' +
                '</tr>';
     }
     
@@ -232,6 +243,39 @@ jQuery(document).ready(function($) {
             },
             error: function() {
                 alert('Error de conexión');
+            }
+        });
+    }
+    
+    /**
+     * Eliminar un archivo
+     */
+    function deleteFile(filePath) {
+        $.ajax({
+            url: wpoi.rest_url + 'delete-file',
+            method: 'POST',
+            beforeSend: function(xhr) {
+                xhr.setRequestHeader('X-WP-Nonce', wpoi.nonce);
+            },
+            data: {
+                file_path: filePath
+            },
+            success: function(response) {
+                if (response.success) {
+                    alert('Archivo eliminado correctamente');
+                    // Recargar la lista de archivos
+                    loadFilesList();
+                } else {
+                    var errorMsg = response.message || 'No se pudo eliminar el archivo';
+                    alert('Error: ' + errorMsg);
+                }
+            },
+            error: function(xhr) {
+                var errorMsg = 'Error de conexión';
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMsg = xhr.responseJSON.message;
+                }
+                alert('Error: ' + errorMsg);
             }
         });
     }
