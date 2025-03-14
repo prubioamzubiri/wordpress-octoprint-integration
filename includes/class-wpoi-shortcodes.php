@@ -57,14 +57,7 @@ class WPOI_Shortcodes {
                     </div>
                     <div id="wpoi-job-info">Sin trabajo activo</div>
                 </div>
-                <?php endif; ?>
-                
-                <?php if ($atts['show_webcam'] === 'true'): ?>
-                <div class="wpoi-webcam">
-                    <h4>Webcam</h4>
-                    <img id="wpoi-webcam-image" src="" alt="Webcam no disponible" />
-                </div>
-                <?php endif; ?>
+                <?php endif; ?>           
             </div>
         </div>
         <?php
@@ -337,8 +330,9 @@ class WPOI_Shortcodes {
             return '<p class="wpoi-error">No se puede obtener la URL de la webcam. Compruebe la configuración.</p>';
         }
         
-        // Enqueue necessary scripts
+        // Enqueue necessary scripts and styles
         wp_enqueue_script('jquery');
+        wp_enqueue_style('wpoi-webcam-styles', plugin_dir_url(dirname(__FILE__)) . 'assets/css/wpoi-webcam.css', array(), '1.0.0');
         
         // Generate unique ID for this webcam instance
         $webcam_id = 'wpoi-webcam-' . uniqid();
@@ -379,55 +373,6 @@ class WPOI_Shortcodes {
         // Add webcam controls if enabled
         if ($atts['controls'] == 'true') {
             $output .= '
-            <style>
-            .wpoi-webcam-controls {
-                display: flex;
-                justify-content: center;
-                gap: 10px;
-                margin-top: 15px;
-                flex-wrap: wrap;
-            }
-            .wpoi-webcam-btn {
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                padding: 8px 15px;
-                background: #0073aa;
-                color: white;
-                border: none;
-                border-radius: 4px;
-                cursor: pointer;
-                font-size: 14px;
-                transition: all 0.2s ease;
-                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            }
-            .wpoi-webcam-btn:hover {
-                background: #005d8c;
-                transform: translateY(-2px);
-                box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-            }
-            .wpoi-webcam-btn:active {
-                transform: translateY(0);
-                box-shadow: 0 1px 2px rgba(0,0,0,0.1);
-            }
-            .wpoi-webcam-btn svg {
-                margin-right: 6px;
-                width: 16px;
-                height: 16px;
-            }
-            @media (max-width: 600px) {
-                .wpoi-webcam-btn {
-                    padding: 6px 10px;
-                    font-size: 12px;
-                }
-                .wpoi-webcam-btn svg {
-                    width: 14px;
-                    height: 14px;
-                    margin-right: 4px;
-                }
-            }
-            </style>
-            
             <div class="wpoi-webcam-controls">
                 <button class="wpoi-webcam-btn wpoi-rotate-left" data-webcam="' . $webcam_id . '">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 2v6h6M2.66 15.57a10 10 0 1 0 .57-8.38"/></svg>

@@ -140,6 +140,7 @@ El plugin está diseñado para funcionar junto con:
 - Mejoras en la estabilidad y rendimiento
 - Corrección de errores menores
 - Shortcode de la webcam añadida
+- Eliminar Webcam de octoprint status
 
 ### 0.3.2
 - Mejoras en la integración de la API
