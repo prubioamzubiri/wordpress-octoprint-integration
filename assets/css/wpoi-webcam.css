@@ -1,0 +1,56 @@
+/**
+ * WordPress OctoPrint Integration - Webcam Styles
+ */
+
+.wpoi-webcam-controls {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 15px;
+    flex-wrap: wrap;
+}
+
+.wpoi-webcam-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 15px;
+    background: #0073aa;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.wpoi-webcam-btn:hover {
+    background: #005d8c;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.wpoi-webcam-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+.wpoi-webcam-btn svg {
+    margin-right: 6px;
+    width: 16px;
+    height: 16px;
+}
+
+@media (max-width: 600px) {
+    .wpoi-webcam-btn {
+        padding: 6px 10px;
+        font-size: 12px;
+    }
+    
+    .wpoi-webcam-btn svg {
+        width: 14px;
+        height: 14px;
+        margin-right: 4px;
+    }
+}
