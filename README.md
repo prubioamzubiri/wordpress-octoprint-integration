@@ -2,7 +2,7 @@
 
 Plugin de WordPress para integrar OctoPrint con tu sitio, permitiendo monitorear y controlar tu impresora 3D directamente desde WordPress.
 
-**Versión actual:** 0.3.3
+**Versión actual:** 0.3.4
 
 ## Instalación
 
@@ -43,12 +43,13 @@ Para permitir a los usuarios subir archivos STL o GCODE directamente a OctoPrint
 Puedes personalizar este shortcode con atributos:
 
 ```
-[octoprint_upload allow_guest="false" show_files="true"]
+[octoprint_upload allow_guest="false" show_files="true" enable_folders="true"]
 ```
 
 Donde:
 - `allow_guest`: Si se establece como "true", permitirá a usuarios no logueados subir archivos (por defecto es "false")
 - `show_files`: Si se establece como "true", mostrará una lista de archivos disponibles en OctoPrint para imprimir (por defecto es "true")
+- `enable_folders`: Si se establece como "true", activará la gestión de carpetas en OctoPrint (por defecto es "true")
 
 ### Webcam dedicada
 
@@ -88,6 +89,11 @@ Ejemplos:
 
 ### Subida e impresión de archivos (`[octoprint_upload]`)
 - Subida directa de archivos STL y GCODE a OctoPrint
+- Gestión completa de carpetas:
+  - Navegación por la estructura de carpetas de OctoPrint
+  - Creación de nuevas carpetas
+  - Subida de archivos a carpetas específicas
+  - Visualización jerárquica de archivos y carpetas
 - Opción para imprimir inmediatamente el archivo subido
 - Listado de archivos disponibles en OctoPrint
 - Funcionalidad para imprimir archivos existentes con un solo clic
@@ -141,7 +147,14 @@ El plugin está diseñado para funcionar junto con:
 
 ## Changelog
 
-### 0.3.3 (Actual)
+### 0.3.4 (Actual)
+- Implementación de gestión completa de carpetas
+- Navegación por carpetas de OctoPrint
+- Funcionalidad para crear nuevas carpetas
+- Subida de archivos a carpetas específicas
+- Mejoras en la interfaz de usuario
+
+### 0.3.3
 - Mejoras en la estabilidad y rendimiento
 - Corrección de errores menores
 - Shortcode de la webcam añadida
