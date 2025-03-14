@@ -351,14 +351,14 @@ class WPOI_Shortcodes {
             $output .= '<div class="wpoi-webcam-viewer" style="position: relative;">';
             $output .= '<img id="' . $webcam_id . '" src="' . esc_url($webcam_url) . '" 
                           alt="OctoPrint Webcam" 
-                          style="width: 100%; height: ' . esc_attr($atts['height']) . '; object-fit: contain;" />';
+                          style="width: 100%; height: ' . esc_attr($atts['height']) . '; object-fit: contain; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);" />';
             $output .= '</div>';
         } else {
             // For snapshot mode with refresh
             $output .= '<div class="wpoi-webcam-viewer" style="position: relative;">';
             $output .= '<img id="' . $webcam_id . '" src="' . esc_url($webcam_url) . '" 
                           alt="OctoPrint Webcam" 
-                          style="width: 100%; height: ' . esc_attr($atts['height']) . '; object-fit: contain;"
+                          style="width: 100%; height: ' . esc_attr($atts['height']) . '; object-fit: contain; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"
                           data-refresh-rate="' . esc_attr($atts['refresh']) . '"
                           data-src="' . esc_url($webcam_url) . '" />';
             $output .= '</div>';
@@ -379,11 +379,72 @@ class WPOI_Shortcodes {
         // Add webcam controls if enabled
         if ($atts['controls'] == 'true') {
             $output .= '
-            <div class="wpoi-webcam-controls" style="margin-top: 10px; text-align: center;">
-                <button class="button wpoi-rotate-left" data-webcam="' . $webcam_id . '">↺ Rotar izquierda</button>
-                <button class="button wpoi-flip-horizontal" data-webcam="' . $webcam_id . '">↔ Voltear horizontal</button>
-                <button class="button wpoi-flip-vertical" data-webcam="' . $webcam_id . '">↕ Voltear vertical</button>
-                <button class="button wpoi-rotate-right" data-webcam="' . $webcam_id . '">↻ Rotar derecha</button>
+            <style>
+            .wpoi-webcam-controls {
+                display: flex;
+                justify-content: center;
+                gap: 10px;
+                margin-top: 15px;
+                flex-wrap: wrap;
+            }
+            .wpoi-webcam-btn {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                padding: 8px 15px;
+                background: #0073aa;
+                color: white;
+                border: none;
+                border-radius: 4px;
+                cursor: pointer;
+                font-size: 14px;
+                transition: all 0.2s ease;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            .wpoi-webcam-btn:hover {
+                background: #005d8c;
+                transform: translateY(-2px);
+                box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            }
+            .wpoi-webcam-btn:active {
+                transform: translateY(0);
+                box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            }
+            .wpoi-webcam-btn svg {
+                margin-right: 6px;
+                width: 16px;
+                height: 16px;
+            }
+            @media (max-width: 600px) {
+                .wpoi-webcam-btn {
+                    padding: 6px 10px;
+                    font-size: 12px;
+                }
+                .wpoi-webcam-btn svg {
+                    width: 14px;
+                    height: 14px;
+                    margin-right: 4px;
+                }
+            }
+            </style>
+            
+            <div class="wpoi-webcam-controls">
+                <button class="wpoi-webcam-btn wpoi-rotate-left" data-webcam="' . $webcam_id . '">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 2v6h6M2.66 15.57a10 10 0 1 0 .57-8.38"/></svg>
+                    Rotar izquierda
+                </button>
+                <button class="wpoi-webcam-btn wpoi-flip-horizontal" data-webcam="' . $webcam_id . '">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v14c0 1.1.9 2 2 2h3M16 3h3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-3M12 7v10"/></svg>
+                    Voltear horizontal
+                </button>
+                <button class="wpoi-webcam-btn wpoi-flip-vertical" data-webcam="' . $webcam_id . '">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v3M21 16v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-3M17 12H7"/></svg>
+                    Voltear vertical
+                </button>
+                <button class="wpoi-webcam-btn wpoi-rotate-right" data-webcam="' . $webcam_id . '">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38"/></svg>
+                    Rotar derecha
+                </button>
             </div>
             
             <script type="text/javascript">
@@ -407,24 +468,40 @@ class WPOI_Shortcodes {
                     var id = $(this).data("webcam");
                     transforms[id].rotateZ -= 90;
                     applyTransform(id);
+                    $(this).addClass("active").delay(200).queue(function(next){
+                        $(this).removeClass("active");
+                        next();
+                    });
                 });
                 
                 $(".wpoi-rotate-right").click(function() {
                     var id = $(this).data("webcam");
                     transforms[id].rotateZ += 90;
                     applyTransform(id);
+                    $(this).addClass("active").delay(200).queue(function(next){
+                        $(this).removeClass("active");
+                        next();
+                    });
                 });
                 
                 $(".wpoi-flip-horizontal").click(function() {
                     var id = $(this).data("webcam");
                     transforms[id].scaleX *= -1;
                     applyTransform(id);
+                    $(this).addClass("active").delay(200).queue(function(next){
+                        $(this).removeClass("active");
+                        next();
+                    });
                 });
                 
                 $(".wpoi-flip-vertical").click(function() {
                     var id = $(this).data("webcam");
                     transforms[id].scaleY *= -1;
                     applyTransform(id);
+                    $(this).addClass("active").delay(200).queue(function(next){
+                        $(this).removeClass("active");
+                        next();
+                    });
                 });
             });
             </script>';
